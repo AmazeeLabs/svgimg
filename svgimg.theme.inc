@@ -27,7 +27,11 @@ function svgimg_theme_media_thumbnail($variables) {
 			}
 		}
 	}
-  if (function_exists('file_entity_access') && file_entity_access('update', $element['#file'])) {
+	$may_edit = true;
+	if (function_exists('file_entity_access')) {
+		$may_edit = file_entity_access('update', $element['#file']);
+	}
+  if ($may_edit) {
     $target = 'file/' . $element['#file']->fid . '/edit';
     $title = t('Click to edit details');
   }
