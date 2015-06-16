@@ -12,6 +12,8 @@ function svgimg_build_element(&$items,$display) {
 			$path = drupal_realpath($item['uri']);
 			if (file_exists($path)) {
 				$xml = file_get_contents($path);
+				$settings = $display['settings'];
+				var_dump($settings);exit;
 				$classes = array('svg-object');
 				$attrs = array(
 					'class' => $classes
