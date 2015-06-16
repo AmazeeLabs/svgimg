@@ -11,8 +11,13 @@ function svgimg_render($png_ref) {
 	$current_path = $_GET['q'];
 	
 	$png_path = preg_replace('#'.$path.'/#', '', $current_path);
-	
-	$full_path = DRUPAL_ROOT. DIRECTORY_SEPARATOR . $path .DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR,$png_path);
+	if (preg_match('#%\d+#',$png_path)) {
+		$decoded_png_path = urldecode($png_path);
+	}
+	else {
+		$decoded_png_path = $png_path;
+	}
+	$full_path = DRUPAL_ROOT. DIRECTORY_SEPARATOR . $path .DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR,$decoded_png_path);
 	if (!file_exists($full_path)) {
 		$style_parts = explode('/img-styles/', $png_path);
 		$num_parts = count($style_parts);
@@ -66,5 +71,10 @@ function svgimg_render($png_ref) {
 				}
 			}
 		}
+	}
+	else if ($png_path != $decoded_png_path) {
+		drupal_add_http_header('Content-Type', 'image/png');
+		print file_get_contents($full_path);
+		exit;
 	}
 }

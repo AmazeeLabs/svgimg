@@ -13,11 +13,14 @@
 			if (s.numImgs > 0) {
 				s.supported = Drupal.svgimg.supported();
 				if (!s.supported) {
-					var i=0,im,png;
+					var i=0,im,png,src;
 					for (;i<s.numImgs;i++) {
 						im = s.imgs.eq(i);
 						png = im.attr('data-src');
 						if (png) {
+							if (typeof decodeURIComponent == 'function') {
+								png = decodeURIComponent(png);
+							}
 							im.attr('data-src',im.attr('src'));
 							im.attr('src',png);
 						}
