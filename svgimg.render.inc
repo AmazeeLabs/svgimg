@@ -1,6 +1,10 @@
 <?php
 
-
+/*
+* Render an SVG image as a PNG for browsers that do not support SVG
+* This requires ImageMagick
+* @param string $png_ref
+*/
 function svgimg_render($png_ref) {
 	$directory_path = variable_get('file_public_path','sites/default/files');
 	$path = svgimg_path();
@@ -61,10 +65,6 @@ function svgimg_render($png_ref) {
 					exit;
 				}
 			}
+		}
 	}
-	
-	
-	}
-	
-
 }

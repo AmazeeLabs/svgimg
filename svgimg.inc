@@ -1,5 +1,10 @@
 <?php
 
+/*
+* Render an SVG image inline
+* @param array &$items
+* @param array $display
+*/
 function svgimg_build_element(&$items,$display) {
 	$element = array();
 	if (!empty($items) && is_array($items)) {
@@ -20,6 +25,12 @@ function svgimg_build_element(&$items,$display) {
 	return $element;
 }
 
+/*
+* Look around image field items to override display for SVG images
+* called by svgimg_field_attach_view_alter
+* @param array &$field_data
+* @param init $count
+*/
 function svgimg_image_svg_loop_items(array &$field_data,$count = 0) {
 	$matched = false;
 	for ($i=0; $i < $count; $i++) {
@@ -63,6 +74,10 @@ function svgimg_image_svg_loop_items(array &$field_data,$count = 0) {
 	}
 }
 
+/*
+* Calculate display according to designated image style 
+* @param string $style_name
+*/
 function svgimg_fetch_style_size($style_name = NULL) {
 	$style = image_style_load($style_name);
 	$data = array();
@@ -82,6 +97,10 @@ function svgimg_fetch_style_size($style_name = NULL) {
 	return $data;
 }
 
+/*
+* Determine if an image file is SVG
+* @param array &$item
+*/
 function svgimg_image_is_svg(array &$item) {
 	$mime_key = 'jpg';
 	if (isset($item['filemime'])) {
@@ -94,6 +113,10 @@ function svgimg_image_is_svg(array &$item) {
 	return $mime_key == 'svg';
 }
 
+/*
+* Calculate image size from source XML
+* @param array &$item
+*/
 function svgimg_image_svg_fetch_size(array &$item) {
 	$size = array('width' => 0,'height' => 0);
 	if (isset($item['uri'])) {
@@ -110,6 +133,13 @@ function svgimg_image_svg_fetch_size(array &$item) {
 	return $size;
 }
 
+/*
+* Map SVG size to target size based on image style resizing criteria
+* @param array &$item
+* @param array &$data
+* @param array &$size
+* @param string $style_name
+*/
 function svgimg_image_svg_map_style(array &$item,array &$data,array &$size, $style_name = NULL) {
 	if (!empty($style_name) && isset($data['height'])) {
 		svgimg_map_target_size($data, $size);
@@ -130,6 +160,12 @@ function svgimg_image_svg_map_style(array &$item,array &$data,array &$size, $sty
 	$item['attributes'] = array('class' => $classes,'data-src' => url($dataSrc));
 }
 
+/*
+* Set image size attributes based on calculated image style attributes
+* @param array &$data
+* @param array &$size
+* @param bool $setSize
+*/
 function svgimg_map_target_size(array &$data,array &$size, $setSize = false) {
 	$imgRatio = $size['width'] / $size['height'];
 	if (isset($data['height']) && isset($data['width']) && $data['height'] > 0) {
@@ -153,6 +189,11 @@ function svgimg_map_target_size(array &$data,array &$size, $setSize = false) {
 	}
 }
 
+/*
+* Fetch URI for PNG alternative
+* @param string &$uri
+* @param string $style_name
+*/
 function svgimg_uri($uri, $style_name = NULL) {
 	$path = svgimg_path();
 	if (!empty($style_name)) {
