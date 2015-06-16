@@ -13,13 +13,13 @@ function svgimg_build_element(&$items,$display) {
 			if (file_exists($path)) {
 				$xml = file_get_contents($path);
 				$settings = $display['settings'];
-				var_dump($settings);exit;
+				$wrapper = !empty($settings['wrapper_tag'])? $settings['wrapper_tag'] : 'figure';
 				$classes = array('svg-object');
 				$attrs = array(
 					'class' => $classes
 				);
 				$element[] = array(
-					'#markup' => '<figure'.drupal_attributes($attrs).'>'.$xml.'</figure>'
+					'#markup' => '<' . $wrapper .drupal_attributes($attrs).'>'.$xml.'</'. $wrapper .'>'
 				);
 			}
 		}
