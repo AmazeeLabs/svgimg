@@ -20,7 +20,7 @@ function svgimg_build_element(&$items,$display) {
 				);
 				$attrs['data-src'] = svgimg_uri($item['uri'],NULL);
 				$element[] = array(
-					'#markup' => '<' . $wrapper .drupal_attributes($attrs).'>'.$xml.'</'. $wrapper .'>'
+					'#markup' => '<' . $wrapper . drupal_attributes($attrs).'>' . $xml . '</'. $wrapper .'>'
 				);
 			}
 		}
