@@ -10,4 +10,4 @@ Important notes:
 PNG alternatives are rendered by PHP's imagemagick extension. You can check if this is available by consulting your php.ini file or simple writing a small PHP file with just phpinfo() (which will output all PHP configuration settings) and search for the words "imagick" or "ImageMagick". 
 If not available, you can follow these steps to install ImageMagick:
 http://php.net/manual/en/imagick.setup.php
-Most static SVG file, even several MBytes, render fine. However, the ImageMagick does not always render animated SVGs. These exceptions are logged under admin/reports/dblog. I can only suggest using one of many SVG Cleanup utilities if exporting from applications such as Inkscape or Illustrator.
+Most static SVG file, even several MBytes, render fine. However, ImageMagick does not always render animated SVGs. These exceptions are logged under admin/reports/dblog. I can only suggest using one of many SVG Cleanup utilities if exporting from applications such as Inkscape or Illustrator.
