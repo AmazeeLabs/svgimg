@@ -3,7 +3,15 @@
 * This is the main module file
 */
 
+/*
+* Path within file directory to PNG rendering callback subdirectory
+*/
 define('SVGIMG_PNG_PATH','svgimg');
+
+/*
+* Define default size for PNG alternatives where none can be read from source XML
+*/
+define('SVGIMG_DEFAULT_SIZE', '1024x800');
 
 function svgimg_menu() {
 	$items = array();
@@ -51,6 +59,8 @@ function svgimg_field_formatter_info() {
 				'field types' => array('image','file'),
 				'settings' => array(
 					'wrapper_tag' => 'figure',
+					'classes' => NULL,
+					'add_script' => NULL,
 				),
 		),
   );

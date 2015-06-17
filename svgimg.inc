@@ -15,13 +15,30 @@ function svgimg_build_element(&$items,$display) {
 				$settings = $display['settings'];
 				$wrapper = !empty($settings['wrapper_tag'])? $settings['wrapper_tag'] : 'figure';
 				$classes = array('svg-object');
+				if (is_string($settings['classes'])) {
+					if (!empty($settings['classes'])) {
+						$classes = array_merge($classes, explode(' ', $settings['classes']));
+					}
+				}
 				$attrs = array(
 					'class' => $classes
 				);
-				$attrs['data-src'] = svgimg_uri($item['uri'],NULL);
-				$element[] = array(
-					'#markup' => '<' . $wrapper . drupal_attributes($attrs).'>' . $xml . '</'. $wrapper .'>'
+				$attrs['data-src'] = url(svgimg_uri($item['uri'],NULL));
+				$render_map = array(
+					'#markup' => '<' . $wrapper . drupal_attributes($attrs).'>' . $xml . '</'. $wrapper .'>',
 				);
+				if (isset($settings['add_script'])) {
+					$settings['add_script'] = (bool) $settings['add_script'];
+				}
+				else {
+					$settings['add_script'] = false;
+				}
+				if ($settings['add_script']) {
+					 $render_map['#attached'] = array(
+						'js' => array(drupal_get_path('module', 'svgimg') . '/js/svgimg.js' )
+					);
+				}
+				$element[] = $render_map;
 			}
 		}
 	}
