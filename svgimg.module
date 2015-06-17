@@ -65,7 +65,7 @@ function svgimg_field_formatter_settings_summary($field, $instance, $view_mode) 
 	switch ($display['type']) {
 		case 'svgimg': 
 			module_load_include('inc', 'svgimg','svgimg.admin');
-			$summary = _svgimg_field_formatter_settings_summary($field, $instance, $view_mode,$display['type']);
+			$summary = _svgimg_field_formatter_settings_summary($field, $instance, $view_mode,$display);
 			break;
 	}
 	return $summary;
