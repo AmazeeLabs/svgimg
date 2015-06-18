@@ -69,3 +69,91 @@ function _svgimg_field_formatter_settings_form(&$field, &$display,&$form, &$form
   
   return $element;
 }
+
+function svgimg_admin($form_state) {
+  $form = array();
+  module_load_include('inc', 'svgimg');
+
+  $imagick_installed =  class_exists('Imagick');
+  
+  if ($imagick_installed) {
+      $im = new Imagick();
+      $api = $im->getVersion();
+      $api_text = $api['versionString'] . '(' . t('Version number') . $api['versionNumber'] . ')';
+      $install_text = t("Successfully installed") . ". " . t("API") . ": " . $api_text;
+    }
+    else {
+      $install_text = t("Not installed or detected. Please follow instructions at") .": ". l("Imagick Setup",'http://php.net/manual/en/imagick.setup.php');
+    }
+  
+  $form['info'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("ImageMagick status"),
+  );
+  
+  $form['info']['status'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>' . $install_text . '</p>',
+  );
+  
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("Global options"),
+  );
+  
+  $size = svgimg_default_size();
+  
+  $form['options']['svgimg_default_size'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("Default size of PNG conversion"),
+    '#description' => t("Only used if no other size can be deduced from the source SVG and/or image style"),
+    '#tree' => TRUE,
+  );
+  
+  $form['options']['svgimg_default_size']['width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width'),
+    '#size' => 5,
+    '#default_value' => $size['width'],
+    '#element_validate' => array('element_validate_integer_positive'), 
+    '#required' => TRUE
+  );
+  
+  $form['options']['svgimg_default_size']['height'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Height"),
+    '#size' => 5,
+    '#default_value' => $size['height'],
+    '#element_validate' => array('element_validate_integer_positive'),
+    '#required' => TRUE
+  );
+  
+  $form['actions'] = array(
+    '#type' => 'fieldset'
+  );
+	
+  $form['actions']['save'] = array(
+     '#type' => "submit",
+     '#value' => t("Save"), 
+	);
+  $form['#submit'] = array('svgimgs_admin_submit');
+  return $form;
+}
+
+function svgimgs_admin_submit(&$form, &$form_state) {
+  $values = $form_state['values'];
+  if (isset($values['svgimg_default_size'])) {
+    $vars = $values['svgimg_default_size'];
+    $dimensions = array('width','height');
+    $valid_dims = 0;
+    foreach ($dimensions as $dim) {
+       if (isset($vars[$dim]) && is_numeric($vars[$dim]) && $vars[$dim] > 0) {
+         $vars[$dim] = (int) $vars[$dim];
+         $valid_dims++;
+       }
+    }
+    if (count($dimensions) == $valid_dims) {
+      variable_set('svgimg_default_size', $vars);
+    }
+  }
+}

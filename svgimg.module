@@ -24,6 +24,16 @@ function svgimg_menu() {
      'access callback' => TRUE,
      'file' => 'svgimg.render.inc',
    );
+	 
+   $items['admin/config/media/svg-img'] = array(
+     'title' => 'SVG Images',
+     'description' => 'Configure SVG Image Conversion options.',
+     'type' => MENU_NORMAL_ITEM,
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('svgimg_admin'),
+     'access arguments' => array('administer site configuration'),
+     'file' => 'svgimg.admin.inc',
+   );
   
   return $items;
 }
