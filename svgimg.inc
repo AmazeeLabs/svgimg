@@ -227,10 +227,15 @@ function svgimg_uri($uri, $style_name = NULL) {
   if (!empty($style_name)) {
     $path .= '/' . $style_name . '/img-styles';
   }
-  $parts = explode('//', $uri);
-  $fileRef = array_pop($parts);
-  $fileRef .= '.png';
-  return $path . '/' . $fileRef;
+  if (strpos($uri,'svgimg/samples/') === 0) {
+    $file_ref = $uri;
+  }
+  else {
+    $parts = explode('//', $uri);
+    $file_ref = array_pop($parts);
+  }
+  $file_ref .= '.png';
+  return $path . '/' . $file_ref;
 }
 
 /*

@@ -79,8 +79,18 @@ function svgimg_admin($form_state) {
   if ($imagick_installed) {
       $im = new Imagick();
       $api = $im->getVersion();
-      $api_text = $api['versionString'] . '(' . t('Version number') . $api['versionNumber'] . ')';
-      $install_text = t("Successfully installed") . ". " . t("API") . ": " . $api_text;
+      if (isset($api['versionString'])) {
+        $filter = filter_format_load('full_html');
+        $filter->settings = array('filter_url_length' => 255);
+        $api_text = _filter_url($api['versionString'],$filter). ' (' . t('Version number') . $api['versionNumber'] . ')';
+        $install_text = t("Successfully installed") . ": " . $api_text;
+      }
+      $vars = array(
+        'path' => drupal_get_path('module','svgimg') . '/samples/bicycle_diagram.svg',
+        'attributes' => array(),
+        'alt' => t("Sample Image"),
+        'title' => t("Source SVG")
+      );
     }
     else {
       $install_text = t("Not installed or detected. Please follow instructions at") .": ". l("Imagick Setup",'http://php.net/manual/en/imagick.setup.php');
@@ -95,6 +105,32 @@ function svgimg_admin($form_state) {
     '#type' => 'markup',
     '#markup' => '<p>' . $install_text . '</p>',
   );
+  
+  $form['preview'] =  array(
+    '#type' => 'fieldset',
+    '#title' => t("Preview"),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+    
+    $markup = '<div class="sample-svgimg-set">';
+    $markup .= svgimg_figure($vars);
+    $vars = array(
+      'path' => svgimg_uri('svgimg/samples/bicycle_diagram.svg'),
+      'attributes' => array(),
+      'alt' => t("Sample Image"),
+      'title' => t("PNG Alternative")
+    );
+    if ($imagick_installed) {
+      $markup .= svgimg_figure($vars,'rendered-png');
+      $markup .= '</div>';
+    }
+    
+    $form['preview']['sample'] = array(
+      '#type' => 'markup',
+      '#markup' => $markup
+    );
+    
   
   $form['options'] = array(
     '#type' => 'fieldset',
@@ -131,15 +167,28 @@ function svgimg_admin($form_state) {
   $form['actions'] = array(
     '#type' => 'fieldset'
   );
-	
+  
   $form['actions']['save'] = array(
      '#type' => "submit",
      '#value' => t("Save"), 
-	);
+  );
   $form['#submit'] = array('svgimgs_admin_submit');
+  
+  $mod_path = drupal_get_path('module', 'svgimg');
+  	$form['#attached'] = array(
+  			'css' => array(
+  					$mod_path . '/css/admin.css'
+  				),
+  	);
+  
   return $form;
 }
 
+/*
+* Form submit handler, validated by default integer validator
+* @params array &$form
+* @params array &$form_state
+*/
 function svgimgs_admin_submit(&$form, &$form_state) {
   $values = $form_state['values'];
   if (isset($values['svgimg_default_size'])) {
@@ -147,13 +196,22 @@ function svgimgs_admin_submit(&$form, &$form_state) {
     $dimensions = array('width','height');
     $valid_dims = 0;
     foreach ($dimensions as $dim) {
-       if (isset($vars[$dim]) && is_numeric($vars[$dim]) && $vars[$dim] > 0) {
-         $vars[$dim] = (int) $vars[$dim];
-         $valid_dims++;
+      if (isset($vars[$dim]) && is_numeric($vars[$dim]) && $vars[$dim] > 0) {
+        $vars[$dim] = (int) $vars[$dim];
+        $valid_dims++;
        }
     }
     if (count($dimensions) == $valid_dims) {
       variable_set('svgimg_default_size', $vars);
     }
   }
+}
+
+/*
+* Wrapper for Drupal's theme_image with figure tags + caption
+* @params array $vars
+* @params string $type_class
+*/
+function svgimg_figure($vars, $type_class = 'source-svg') {
+  return '<figure class="sample-image '.$type_class.'" >' . theme_image($vars) . '<figcaption>'.$vars['title'].'</figcaption></figure>';
 }
