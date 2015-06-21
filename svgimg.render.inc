@@ -28,7 +28,7 @@ function svgimg_render($png_ref) {
       $style_name = array_shift($style_parts);
     }
     // Check if ImageMagick extension is installed
-    if (class_exists('Imagick') ) {
+    if (class_exists('Imagick')) {
       $im = new Imagick();
       if (strpos($png_path,'svgimg/samples/') === 0) {
         $source_directory_path = str_replace('/svgimg','', drupal_get_path('module', 'svgimg'));
@@ -37,32 +37,20 @@ function svgimg_render($png_ref) {
         $source_directory_path = $directory_path;
       }
       $svg_path = DRUPAL_ROOT. DIRECTORY_SEPARATOR . $source_directory_path . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR,$svg_uri);
-        
+       
       if (file_exists($svg_path)) {
         module_load_include('inc', 'svgimg');
-        $svg = file_get_contents($svg_path);
-        $xml_doc_tag_pos = strpos($svg, '<?xml');
-        $has_doc_tag = (is_int($xml_doc_tag_pos) && $xml_doc_tag_pos >= 0 && $xml_doc_tag_pos < 10);
-        if (!$has_doc_tag) {
-          $svg = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' . $svg;
+         
+        $svg_data = svgimg_parse_xml_attrs($svg_path);
+        
+        $size = $svg_data->size;
+        $resized = FALSE;
+        if (!empty($style_name)) {
+          $data = svgimg_fetch_style_size($style_name);
         }
-        $xml = simplexml_load_string($svg);
-        
-        $xml->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
-        $xml->registerXPathNamespace('xlink', 'http://www.w3.org/1999/xlink');
-                    
-        $attrs = $xml->attributes();
-        $data = svgimg_fetch_style_size($style_name);
-        
-        if ( isset($attrs['height'])) {
-          if (!empty($style_name)) {
-            $data = svgimg_fetch_style_size($style_name);
-          }
-          $size['height'] = (int) (string) $attrs['height'];
-          $size['width'] = (int) (string) $attrs['width'];
-          if (!empty($style_name) && isset($data['effect'])) {
-            svgimg_map_target_size($data,$size,true);
-          }
+        $source_width = $size['width'];
+        if (!empty($style_name) && isset($data['effect'])) {
+          svgimg_map_target_size($data,$size,true);
         }
         else {
           if (!empty($style_name)) {
@@ -76,18 +64,25 @@ function svgimg_render($png_ref) {
             $size = svgimg_default_size();
           }
         }
+        if (!empty($style_name)) {
+          $resized = $source_width != $size['width'];
+          if ($resized) {
+            $svg_data->xml['width'] = $size['width'];
+            $svg_data->xml['height'] = $size['height'];
+            $svg = $svg_data->xml->asXml();
+          }
+        }
         $valid_svg = true;
         try {
           $im->readImageBlob($svg);
         }
         catch (Exception $e) {
-          print $e->getMessage();exit;
           watchdog("error", "SVG file could not be parsed for PNG conversion: " . $e->getMessage());
           $valid_svg = false;
         }
         if ($valid_svg) {
           $im->setImageFormat("png24");
-          $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 1);
+          $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 0);
           $parts = explode(DIRECTORY_SEPARATOR, $full_path);
           array_pop($parts);
           $full_dir = implode(DIRECTORY_SEPARATOR,$parts);
@@ -96,7 +91,8 @@ function svgimg_render($png_ref) {
           }
           try {
             $im->writeImage($full_path);
-          } catch (Exception $e) {
+          }
+          catch (Exception $e) {
             watchdog("error", "PNG version of SVG file could not be written: " . $e->getMessage());
           }
           drupal_add_http_header('Content-Type', 'image/png');

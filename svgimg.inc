@@ -250,3 +250,89 @@ function svgimg_default_size() {
   );
   return variable_get('svgimg_default_size', $svgimg_default_size);
 }
+
+/*
+* @param string $svg_path
+*/
+function svgimg_fetch_source_size($svg_path = NULL) {
+  $data = svgimg_parse_xml_attrs($svg_path);
+  return $data->size;
+}
+
+/*
+* @param string $svg_path
+*/
+function svgimg_parse_xml_attrs($svg_path = NULL) {
+  $size = array('width' => 0, 'height' => 0);
+  $svg = file_get_contents($svg_path);
+  $xml_xml_decl_pos = strpos($svg, '<?xml');
+  $has_xml_decl = (is_int($xml_xml_decl_pos) && $xml_xml_decl_pos >= 0 && $xml_xml_decl_pos < 10);
+  // ImageMagick fails to parse files without xml declaration
+  if (!$has_xml_decl) {
+    $svg = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' . $svg;
+  }
+  $xml = simplexml_load_string($svg);
+  
+  $xml->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
+  $xml->registerXPathNamespace('xlink', 'http://www.w3.org/1999/xlink');
+              
+  $attrs = $xml->attributes();
+  if ( isset($attrs['height'])) {
+    $size['height'] = (int) (string) $attrs['height'];
+    $size['width'] = (int) (string) $attrs['width'];
+  }
+  $data = new StdClass;
+  $data->xml = $xml;
+  $data->size = $size;
+  return $data;
+}
+
+/*
+* @param string $uri
+* @param string $directory_path
+*/
+function svgimg_root_path($uri = NULL, $directory_path = NULL) {
+  if (empty($directory_path)) {
+    $directory_path = variable_get('file_public_path','sites/default/files');
+  }
+  return DRUPAL_ROOT . DIRECTORY_SEPARATOR .$directory_path . DIRECTORY_SEPARATOR . file_uri_target($uri);
+}
+
+/*
+* @param string $uri
+*/
+function svgimg_fetch_size($uri) {
+  $svg_path = svgimg_root_path($uri);
+  return svgimg_fetch_source_size($svg_path);
+}
+
+/*
+* @param object $entity
+* @param string $field_name
+*/
+function _svgimg_loop_entity_field_items($entity, $field_name) {
+  if (isset($entity->{$field_name}) && !empty($entity->{$field_name})) {
+    foreach ($entity->{$field_name} as $langcode => $field_items) {
+      if (!empty($field_items)) {
+        $changed = false;
+        foreach ($field_items as &$item) {
+          if ($item['fid'] > 0) {
+            $file = file_load($item['fid']);
+            if (is_object($file)) {
+              if (!empty($file->uri) && $file->filemime == 'image/svg+xml' && empty($item['width'])) {
+                
+                $size = svgimg_fetch_size($file->uri);
+                $item['width'] = $size['width'];
+                $item['height'] = $size['height'];
+                $changed = true;
+              }    
+            }
+          }
+        }
+        if ($changed) {
+          $entity->{$field_name} = array($langcode => $field_items);
+        }
+      }
+    }
+  }
+}
