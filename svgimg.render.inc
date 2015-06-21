@@ -82,7 +82,7 @@ function svgimg_render($png_ref) {
         }
         if ($valid_svg) {
           $im->setImageFormat("png24");
-          $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 0);
+          $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 1);
           $parts = explode(DIRECTORY_SEPARATOR, $full_path);
           array_pop($parts);
           $full_dir = implode(DIRECTORY_SEPARATOR,$parts);
