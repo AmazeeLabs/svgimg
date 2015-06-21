@@ -9,7 +9,6 @@ function svgimg_render($png_ref) {
   $directory_path = variable_get('file_public_path','sites/default/files');
   $path = svgimg_path();
   $current_path = $_GET['q'];
-  
   $png_path = preg_replace('#'.$path.'/#', '', $current_path);
   if (preg_match('#%\d+#',$png_path)) {
     $decoded_png_path = urldecode($png_path);
@@ -27,23 +26,20 @@ function svgimg_render($png_ref) {
     if ($num_parts > 1) {
       $style_name = array_shift($style_parts);
     }
+  
     // Check if ImageMagick extension is installed
     if (class_exists('Imagick')) {
-      $im = new Imagick();
       if (strpos($png_path,'svgimg/samples/') === 0) {
         $source_directory_path = str_replace('/svgimg','', drupal_get_path('module', 'svgimg'));
       }
       else {
         $source_directory_path = $directory_path;
       }
-      $svg_path = DRUPAL_ROOT. DIRECTORY_SEPARATOR . $source_directory_path . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR,$svg_uri);
-       
+       module_load_include('inc', 'svgimg');
+      $svg_path = svgimg_root_path($svg_uri,$source_directory_path);
       if (file_exists($svg_path)) {
-        module_load_include('inc', 'svgimg');
-         
-        $svg_data = svgimg_parse_xml_attrs($svg_path);
-        
-        $size = $svg_data->size;
+        $svg_data = svgimg_fetch_data($svg_path);
+        $size = $svg_data->size();
         $resized = FALSE;
         if (!empty($style_name)) {
           $data = svgimg_fetch_style_size($style_name);
@@ -64,15 +60,17 @@ function svgimg_render($png_ref) {
             $size = svgimg_default_size();
           }
         }
+        // Set SVG root tag to have target width and height parameters defined by 
+        // image style to prevent pixelation on resize as ImageMagick rasterises
+        // SVG in readImageBlock method
         if (!empty($style_name)) {
           $resized = $source_width != $size['width'];
           if ($resized) {
-            $svg_data->xml['width'] = $size['width'];
-            $svg_data->xml['height'] = $size['height'];
-            $svg = $svg_data->xml->asXml();
+            $svg = $svg_data->setSize($size);
           }
         }
         $valid_svg = true;
+        $im = new Imagick();
         try {
           $im->readImageBlob($svg);
         }

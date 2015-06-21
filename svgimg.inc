@@ -142,22 +142,18 @@ function svgimg_image_svg_fetch_size(array &$item) {
   if (isset($item['uri'])) {
     $path  = drupal_realpath($item['uri']);
     if ($path) {
-      $xml = simplexml_load_file($path);
-      $xml->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
-      $xml->registerXPathNamespace('xlink', 'http://www.w3.org/1999/xlink');
-      $attrs = $xml->attributes();
-      $size['height'] = (int) (string) $attrs['height'];
-      $size['width'] = (int) (string) $attrs['width'];
+      $svg_data = svgimg_fetch_data($path);
+      $size = $svg_data->size();
     }
   }
   if ($size['height'] < 1) {
-          if ($size['width'] > 0) {
-            $size['height'] = $size['width'];
-          }
-          else {
-            $size = svgimg_default_size();
-          }
-        }
+    if ($size['width'] > 0) {
+      $size['height'] = $size['width'];
+    }
+    else {
+      $size = svgimg_default_size();
+    }
+  }
   return $size;
 }
 
@@ -255,36 +251,16 @@ function svgimg_default_size() {
 * @param string $svg_path
 */
 function svgimg_fetch_source_size($svg_path = NULL) {
-  $data = svgimg_parse_xml_attrs($svg_path);
-  return $data->size;
+  return svgimg_fetch_data($svg_path)->size();
 }
 
 /*
 * @param string $svg_path
 */
-function svgimg_parse_xml_attrs($svg_path = NULL) {
-  $size = array('width' => 0, 'height' => 0);
+function svgimg_fetch_data($svg_path = NULL) {
   $svg = file_get_contents($svg_path);
-  $xml_xml_decl_pos = strpos($svg, '<?xml');
-  $has_xml_decl = (is_int($xml_xml_decl_pos) && $xml_xml_decl_pos >= 0 && $xml_xml_decl_pos < 10);
-  // ImageMagick fails to parse files without xml declaration
-  if (!$has_xml_decl) {
-    $svg = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' . $svg;
-  }
-  $xml = simplexml_load_string($svg);
-  
-  $xml->registerXPathNamespace('svg', 'http://www.w3.org/2000/svg');
-  $xml->registerXPathNamespace('xlink', 'http://www.w3.org/1999/xlink');
-              
-  $attrs = $xml->attributes();
-  if ( isset($attrs['height'])) {
-    $size['height'] = (int) (string) $attrs['height'];
-    $size['width'] = (int) (string) $attrs['width'];
-  }
-  $data = new StdClass;
-  $data->xml = $xml;
-  $data->size = $size;
-  return $data;
+  module_load_include('php','svgimg','includes/SvgimgData');
+  return new SvgimgData($svg);
 }
 
 /*
@@ -292,10 +268,17 @@ function svgimg_parse_xml_attrs($svg_path = NULL) {
 * @param string $directory_path
 */
 function svgimg_root_path($uri = NULL, $directory_path = NULL) {
+  if (strpos($uri,'://') === false || strpos($uri,'://') < 1) {
+    $uri = 'public://' . $uri;
+  }
   if (empty($directory_path)) {
     $directory_path = variable_get('file_public_path','sites/default/files');
+    // enable path translation for other file schemas, e.g. not on same server
+    return drupal_realpath($uri);
   }
-  return DRUPAL_ROOT . DIRECTORY_SEPARATOR .$directory_path . DIRECTORY_SEPARATOR . file_uri_target($uri);
+  else {
+    return DRUPAL_ROOT . DIRECTORY_SEPARATOR .$directory_path . DIRECTORY_SEPARATOR . file_uri_target($uri);
+  }
 }
 
 /*
