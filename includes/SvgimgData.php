@@ -103,6 +103,10 @@ class SvgimgData {
     return $this->svg;
   }
   
+  /*
+  * @param array $size
+  * @return self
+  */
   function setSize(array $size) {
     if (isset($size['width']) && isset($size['height']) && is_numeric($size['width']) && is_numeric($size['height'])) {
       if ($this->xml instanceof SimpleXMLElement) {
@@ -112,7 +116,7 @@ class SvgimgData {
       }
       $this->size = $size;
     }
-    return $this->svg;
+    return $this;
   }
   
 }

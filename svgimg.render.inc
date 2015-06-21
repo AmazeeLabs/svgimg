@@ -56,7 +56,7 @@ function svgimg_render($png_ref) {
               'height' => $data['height']
             );
           }
-          else {
+          else if ($svg_data->hasSize() == false) {
             $size = svgimg_default_size();
           }
         }
@@ -66,9 +66,11 @@ function svgimg_render($png_ref) {
         if (!empty($style_name)) {
           $resized = $source_width != $size['width'];
           if ($resized) {
-            $svg = $svg_data->setSize($size);
+            $svg_data->setSize($size);
+            $size_reset = true;
           }
         }
+        $svg = $svg_data->svg();
         $valid_svg = true;
         $im = new Imagick();
         try {
