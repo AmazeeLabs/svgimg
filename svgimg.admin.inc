@@ -85,12 +85,6 @@ function svgimg_admin($form_state) {
         $api_text = _filter_url($api['versionString'],$filter). ' (' . t('Version number') . $api['versionNumber'] . ')';
         $install_text = t("Successfully installed") . ": " . $api_text;
       }
-      $vars = array(
-        'path' => drupal_get_path('module','svgimg') . '/samples/bicycle_diagram.svg',
-        'attributes' => array(),
-        'alt' => t("Sample Image"),
-        'title' => t("Source SVG")
-      );
     }
     else {
       $install_text = t("Not installed or detected. Please follow instructions at") .": ". l("Imagick Setup",'http://php.net/manual/en/imagick.setup.php');
@@ -113,23 +107,32 @@ function svgimg_admin($form_state) {
     '#collapsed' => TRUE
   );
     
-    $markup = '<div class="sample-svgimg-set">';
-    $markup .= svgimg_figure($vars);
-    $vars = array(
-      'path' => svgimg_uri('svgimg/samples/bicycle_diagram.svg'),
-      'attributes' => array(),
-      'alt' => t("Sample Image"),
-      'title' => t("PNG Alternative")
-    );
-    if ($imagick_installed) {
-      $markup .= svgimg_figure($vars,'rendered-png');
-      $markup .= '</div>';
-    }
-    
-    $form['preview']['sample'] = array(
-      '#type' => 'markup',
-      '#markup' => $markup
-    );
+  $markup = '<div class="sample-svgimg-set">';
+  $vars = array(
+    'path' => drupal_get_path('module','svgimg') . '/samples/bicycle_diagram.svg',
+    'attributes' => array(),
+    'alt' => t("Sample Image"),
+    'title' => t("Source SVG")
+  );
+  $markup .= svgimg_figure($vars);
+  $vars = array(
+    'path' => svgimg_uri('svgimg/samples/bicycle_diagram.svg'),
+    'attributes' => array(),
+    'alt' => t("Sample Image"),
+    'title' => t("PNG Alternative")
+  );
+  if ($imagick_installed) {
+    $markup .= svgimg_figure($vars,'rendered-png');
+  }
+  else {
+    $markup .= svgimg_not_available(t("SVG image cannot be automatically converted to PNG. ImageMagick not available."));
+  }
+  $markup .= '</div>';
+  
+  $form['preview']['sample'] = array(
+    '#type' => 'markup',
+    '#markup' => $markup
+  );
     
   
   $form['options'] = array(
@@ -213,5 +216,31 @@ function svgimgs_admin_submit(&$form, &$form_state) {
 * @params string $type_class
 */
 function svgimg_figure($vars, $type_class = 'source-svg') {
-  return '<figure class="sample-image '.$type_class.'" >' . theme_image($vars) . '<figcaption>'.$vars['title'].'</figcaption></figure>';
+  return _svgimg_figure_wrapper(theme_image($vars), $vars['title'], $type_class);
+}
+
+/*
+* Wrapper for Drupal's theme_image with figure tags + caption
+* @params array $vars
+* @params string $type_class
+*/
+function svgimg_not_available($caption) {
+  return _svgimg_figure_wrapper('', $caption, 'not-available');
+}
+
+/*
+* Abtract figure element with optional constructed image plus caption
+* @params string $str_image
+* @params string $caption
+* @params string $type_class
+*/
+function _svgimg_figure_wrapper($str_image = '', $str_caption = '', $type_class = 'source-svg') {
+  $classes = array();
+  if (!empty($str_image)) {
+    $classes[] = 'sample-image';
+  }
+  if (!empty($type_class)) {
+    $classes[] = $type_class;
+  }
+  return '<figure class="'.implode(' ', $classes).'" >' . $str_image . '<figcaption>'. $str_caption .'</figcaption></figure>';
 }

@@ -54,36 +54,15 @@ function svgimg_build_element(&$items,$display) {
 function svgimg_image_svg_loop_items(array &$field_data,$count = 0) {
   $matched = false;
   for ($i=0; $i < $count; $i++) {
-    $item = array();
-    $use_file_entity = false;
+    $item_matched = false;
     if (isset($field_data[$i]['#item'])) {
-      $item =& $field_data[$i]['#item']; 
+      $item_matched = _svgimg_apply_field_item_override($field_data[$i]['#item'], $field_data, $i, false);
     }
     else if (isset($field_data[$i]['file'])) {
-      $item =& $field_data[$i]['file']['#item'];
-      $use_file_entity = true;
+      $item_matched = _svgimg_apply_field_item_override($field_data[$i]['file']['#item'], $field_data, $i, true);
     }
-    if (!empty($item)) {
-      if (svgimg_image_is_svg($item)) {
-        $matched = true;
-        if ($use_file_entity) {
-          $style_name = $field_data[$i]['file']['#image_style'];
-          if ($field_data[$i]['file']['#theme'] != 'image_formatter') {
-            $field_data[$i]['file']['#theme'] = 'image_formatter';
-            $field_data[$i]['#image_style'] = NULL;
-          } 
-        } else {
-          $style_name = $field_data[$i]['#image_style'];
-        }
-        $data = svgimg_fetch_style_size($style_name);
-        $size = svgimg_image_svg_fetch_size($item);
-        svgimg_image_svg_map_style($item,$data,$size, $style_name);
-        if ($use_file_entity) {
-          $field_data[$i]['file']['#image_style'] = NULL;
-        } else {
-          $field_data[$i]['#image_style'] = NULL;
-        }
-      }
+    if ($item_matched) {
+      $matchhed = true;
     }
   }
   if ($matched) {
@@ -92,6 +71,38 @@ function svgimg_image_svg_loop_items(array &$field_data,$count = 0) {
     }
     $field_data['#attached']['js'][] = drupal_get_path('module', 'svgimg') . '/js/svgimg.js';
   }
+}
+
+/*
+* @param array &$item
+* @param array &$field_data
+* @param int $delta
+* @param bool $use_file_entity
+* @return bool
+*/
+function _svgimg_apply_field_item_override(&$item, &$field_data, $delta = 0,$use_file_entity = false) {
+  $matched = false;
+  if (svgimg_image_is_svg($item)) {
+    $matched = true;
+    if ($use_file_entity) {
+      $style_name = $field_data[$delta]['file']['#image_style'];
+      if ($field_data[$delta]['file']['#theme'] != 'image_formatter') {
+        $field_data[$delta]['file']['#theme'] = 'image_formatter';
+        $field_data[$delta]['#image_style'] = NULL;
+      } 
+    } else {
+      $style_name = $field_data[$delta]['#image_style'];
+    }
+    $data = svgimg_fetch_style_size($style_name);
+    $size = svgimg_image_svg_fetch_size($item);
+    svgimg_image_svg_map_style($item,$data,$size, $style_name);
+    if ($use_file_entity) {
+      $field_data[$delta]['file']['#image_style'] = NULL;
+    } else {
+      $field_data[$delta]['#image_style'] = NULL;
+    }
+  }
+  return $matched;
 }
 
 /*
