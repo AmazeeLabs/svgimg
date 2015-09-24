@@ -148,7 +148,7 @@ function svgimg_theme_registry_alter(&$theme_registry) {
 * Fetch path to directory for PNG alternatives
 */
 function svgimg_path() {
-  return variable_get('file_public_path','sites/default/files') . '/' . SVGIMG_PNG_PATH;
+  return variable_get('file_public_path', conf_path() . '/files') . '/' . SVGIMG_PNG_PATH;
 }
 
 /*

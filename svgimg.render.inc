@@ -6,7 +6,7 @@
 * @param string $png_ref
 */
 function svgimg_render($png_ref) {
-  $directory_path = variable_get('file_public_path','sites/default/files');
+  $directory_path = variable_get('file_public_path', conf_path() . '/files');
   $path = svgimg_path();
   $current_path = $_GET['q'];
   $png_path = preg_replace('#'.$path.'/#', '', $current_path);

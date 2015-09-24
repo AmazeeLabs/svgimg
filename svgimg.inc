@@ -283,7 +283,7 @@ function svgimg_root_path($uri = NULL, $directory_path = NULL) {
     $uri = 'public://' . $uri;
   }
   if (empty($directory_path)) {
-    $directory_path = variable_get('file_public_path','sites/default/files');
+    $directory_path = variable_get('file_public_path', conf_path() . '/files');
     // enable path translation for other file schemas, e.g. not on same server
     return drupal_realpath($uri);
   }
