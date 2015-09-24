@@ -73,18 +73,10 @@ function _svgimg_field_formatter_settings_form(&$field, &$display,&$form, &$form
 function svgimg_admin($form_state) {
   $form = array();
   module_load_include('inc', 'svgimg');
-
-  $imagick_installed =  class_exists('Imagick');
+  $imagick_data = svgimg_imagick_data();
   
-  if ($imagick_installed) {
-      $im = new Imagick();
-      $api = $im->getVersion();
-      if (isset($api['versionString'])) {
-        $filter = filter_format_load('full_html');
-        $filter->settings = array('filter_url_length' => 255);
-        $api_text = _filter_url($api['versionString'],$filter). ' (' . t('Version number') . $api['versionNumber'] . ')';
-        $install_text = t("Successfully installed") . ": " . $api_text;
-      }
+  if ($imagick_data->installed) {
+    $install_text = svgimg_get_imagickmagic_info($imagick_data);
     }
     else {
       $install_text = t("Not installed or detected. Please follow instructions at") .": ". l("Imagick Setup",'http://php.net/manual/en/imagick.setup.php');
@@ -99,6 +91,19 @@ function svgimg_admin($form_state) {
     '#type' => 'markup',
     '#markup' => '<p>' . $install_text . '</p>',
   );
+  
+  if (!$imagick_data->use_php) {
+    $form['info']['svg_imagemagick'] = array(
+      '#type' => 'textfield',
+      '#title' => t("Path ImageMagick convert command"),
+      '#size' => 80,
+      '#default_value' => $imagick_data->path
+    );
+    if (!$imagick_data->valid) {
+      $form['info']['svg_imagemagick']['#description'] = t("A file exists at this location, but is not executable. Please check file permissions");
+      $form['info']['svg_imagemagick']['#attributes']['class'][] = 'error';
+    }
+  }
   
   $form['preview'] =  array(
     '#type' => 'fieldset',
@@ -121,7 +126,7 @@ function svgimg_admin($form_state) {
     'alt' => t("Sample Image"),
     'title' => t("PNG Alternative")
   );
-  if ($imagick_installed) {
+  if ($imagick_data->valid) {
     $markup .= svgimg_figure($vars,'rendered-png');
   }
   else {
@@ -187,6 +192,87 @@ function svgimg_admin($form_state) {
   return $form;
 }
 
+function svgimg_imagick_data() {
+  $data = new StdClass;
+  $data->installed =  class_exists('Imagick');
+  $data->valid = $data->installed;
+  $data->use_php = $data->installed;
+  $data->path = NULL;
+  if (!$data->installed) {
+    $data->use_php = false;
+    $current_path = variable_get('svgimg_imagemagick',NULL);
+    $im_paths = array(
+      '/usr/bin/convert',
+      '/opt/ImageMagick/bin/convert'
+    );
+    if (!empty($current_path) && !in_array($current_path,$im_paths)) {
+      array_unshift($im_paths,$current_path);
+    }
+    foreach ($im_paths as $path)
+    if (file_exists($path)) {
+      $data->installed = true;
+      $data->valid = is_executable($path);
+      $data->use_php = false;
+      if ($data->valid) {
+        variable_set('svgimg_imagemagick',$path);
+      }
+      $data->path = $path;
+      break;
+    }
+  } else {
+    variable_set('svgimg_imagemagick','php');
+  }
+  return $data;
+}
+
+function svgimg_get_imagickmagic_info($imagick_data) {
+  $text = '';
+  $versionString = '';
+  $versionNum = '';
+  if ($imagick_data->use_php) {
+    $im = new Imagick();
+    $api = $im->getVersion();
+    if (isset($api['versionString'])) { 
+      $versionString = $api['versionString'];
+      if (isset($api['versionNumber'])) {
+        $versionNum = $api['versionNumber'];
+      }
+    }
+  }
+  else {
+    $out = exec(variable_get('svgimg_imagemagick_path') ." -version", $return);
+    $api = array();
+    if (is_array($return)) {
+      foreach ($return as $line) {
+        $parts = explode(':',$line);
+        $key = array_shift($parts);
+        $string = implode(':', $parts);
+        $key = strtolower(trim($key));
+        switch ($key) {
+          case 'version':
+            $versionString = $string;
+            break;
+            
+        }
+      }
+    }
+  }
+  
+  if (!empty($versionString)) {
+    $filter = filter_format_load('full_html');
+    $filter->settings = array('filter_url_length' => 255);
+    $api_text = _filter_url($versionString,$filter);
+    if (!empty($versionNum)) {
+      $api_text = ' (' . t('Version number') . $versionNum . ')';
+    }
+    $text = t("Successfully installed") . ": " . $api_text;
+    if (strlen($imagick_data->path) > 3 && !$imagick_data->use_php) {
+      $text .= '. Uses command.';
+    }
+  }
+  return $text;
+}
+
 /*
 * Form submit handler, validated by default integer validator
 * @params array &$form
@@ -206,6 +292,16 @@ function svgimgs_admin_submit(&$form, &$form_state) {
     }
     if (count($dimensions) == $valid_dims) {
       variable_set('svgimg_default_size', $vars);
+    }
+  }
+  if (isset($values['svgimg_imagemagick'])) {
+    $path = trim($values['svgimg_imagemagick']);
+    if (strlen($path) > 3) {
+      $current_path = variable_get('svgimg_imagemagick', NULL);
+      if (file_exists($path) && $current_path != $path) {
+        variable_set('svgimg_imagemagick', $path);
+        drupal_set_message(t("Saved new imageMagick convert path: @path",array('@path' => $path)));
+      }
     }
   }
 }

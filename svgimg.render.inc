@@ -26,9 +26,24 @@ function svgimg_render($png_ref) {
     if ($num_parts > 1) {
       $style_name = array_shift($style_parts);
     }
-  
+    
+    $im_path = variable_get('svgimg_imagemagick',NULL);
     // Check if ImageMagick extension is installed
-    if (class_exists('Imagick')) {
+    $valid = class_exists('Imagick');
+    $use_php = $valid;
+    if (!$valid) {
+      if ($im_path != 'php' && is_string($im_path) && strlen($im_path) > 3) {
+        $use_php = false;
+        $valid = true;
+      }
+    }
+    if ($valid) {
+      $parts = explode(DIRECTORY_SEPARATOR, $full_path);
+      array_pop($parts);
+      $full_dir = implode(DIRECTORY_SEPARATOR,$parts);
+      if (!is_dir($full_dir)) {
+        drupal_mkdir($full_dir,NULL,TRUE);
+      }
       if (strpos($png_path,'svgimg/samples/') === 0) {
         $source_directory_path = str_replace('/svgimg','', drupal_get_path('module', 'svgimg'));
       }
@@ -71,33 +86,14 @@ function svgimg_render($png_ref) {
           }
         }
         $svg = $svg_data->svg();
-        $valid_svg = true;
-        $im = new Imagick();
-        try {
-          $im->readImageBlob($svg);
-        }
-        catch (Exception $e) {
-          watchdog("error", "SVG file could not be parsed for PNG conversion: " . $e->getMessage());
-          $valid_svg = false;
-        }
+        $valid_svg = $svg_data->valid();
         if ($valid_svg) {
-          $im->setImageFormat("png24");
-          $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 1);
-          $parts = explode(DIRECTORY_SEPARATOR, $full_path);
-          array_pop($parts);
-          $full_dir = implode(DIRECTORY_SEPARATOR,$parts);
-          if (!is_dir($full_dir)) {
-            drupal_mkdir($full_dir,NULL,TRUE);
+          if ($use_php) {
+            _svgimg_php_render($full_path,$svg,$size);
           }
-          try {
-            $im->writeImage($full_path);
+          else {
+            _svgimg_shell_render($im_path,$full_path,$svg_path,$size);
           }
-          catch (Exception $e) {
-            watchdog("error", "PNG version of SVG file could not be written: " . $e->getMessage());
-          }
-          drupal_add_http_header('Content-Type', 'image/png');
-          print $im;
-          exit;
         }
       }
     }
@@ -108,6 +104,53 @@ function svgimg_render($png_ref) {
   else if ($png_path != $decoded_png_path) {
     drupal_add_http_header('Content-Type', 'image/png');
     print file_get_contents($full_path);
+    exit;
+  }
+}
+
+/*
+* @param string $full_path
+* @param string $svg
+* @param array $size
+*/
+function _svgimg_php_render($full_path = '', $svg = '', array $size = array()) {
+  $im = new Imagick();
+  try {
+    $im->readImageBlob($svg);
+  }
+  catch (Exception $e) {
+    watchdog("error", "SVG file could not be parsed for PNG conversion: " . $e->getMessage());
+    $valid_svg = false;
+  }
+  if ($valid_svg) {
+    $im->setImageFormat("png24");
+    $im->resizeImage($size['width'], $size['height'], imagick::FILTER_LANCZOS, 1);
+    
+    try {
+      $im->writeImage($full_path);
+    }
+    catch (Exception $e) {
+      watchdog("error", "PNG version of SVG file could not be written: " . $e->getMessage());
+    }
+    drupal_add_http_header('Content-Type', 'image/png');
+    print $im;
+    exit;
+  }
+}
+
+/*
+* @param string $im_path
+* @param string $full_path
+* @param string $svg_path
+* @param array $size
+*/
+function _svgimg_shell_render($im_path = NULL,$full_path,$svg_path,array $size = array()) {
+  $command = $im_path . ' -background none -size '.$size['width'] .'x'.$size['height'].' '.$svg_path.' ' . $full_path;
+  exec($command);
+  usleep(100000);
+  if (file_exists($svg_path)) {
+    $stream = file_get_contents($svg_path);
+    print $stream;
     exit;
   }
 }

@@ -26,11 +26,17 @@ class SvgimgData {
   */
   protected $hasSize = false;
   
+  /*
+  * @var bool
+  */
+  protected $valid = false;
+  
   function __construct($svg) {
     if (is_string($svg) && strpos($svg,'<svg') !== false && strpos($svg,'</svg>') > 10) {
       $this->parseSVG($svg);
       if ($this->xml instanceof SimpleXMLElement) {
         $this->parseSize();
+        $this->valid = true;
       }
     }
   }
@@ -101,6 +107,13 @@ class SvgimgData {
   */
   function svg() {
     return $this->svg;
+  }
+  
+  /*
+  * @return bool
+  */
+  function valid() {
+    return $this->valid;
   }
   
   /*
