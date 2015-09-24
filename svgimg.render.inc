@@ -132,8 +132,7 @@ function _svgimg_php_render($full_path = '', $svg = '', array $size = array()) {
     catch (Exception $e) {
       watchdog("error", "PNG version of SVG file could not be written: " . $e->getMessage());
     }
-    drupal_add_http_header('Content-Type', 'image/png');
-    print $im;
+    svgimg_print_stream($im);
     exit;
   }
 }
@@ -148,4 +147,18 @@ function _svgimg_shell_render($im_path = NULL,$full_path,$svg_path,array $size =
   $command = $im_path . ' -background none -size '.$size['width'] .'x'.$size['height'].' '.$svg_path.' ' . $full_path;
   exec($command);
   usleep(100000);
+  if (file_exists($full_path)) {
+    $stream = file_get_contents($full_path);
+    svgimg_print_stream($stream);
+  }
+}
+
+function svgimg_print_stream($stream = NULL) {
+  drupal_add_http_header('Content-Type', 'image/png');
+  drupal_add_http_header('Expires','0');
+  if (is_string($stream)) {
+    drupal_add_http_header('Content-Length', strlen($stream));
+  }
+  print $stream;
+  exit;
 }
