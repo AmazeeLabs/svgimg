@@ -148,9 +148,4 @@ function _svgimg_shell_render($im_path = NULL,$full_path,$svg_path,array $size =
   $command = $im_path . ' -background none -size '.$size['width'] .'x'.$size['height'].' '.$svg_path.' ' . $full_path;
   exec($command);
   usleep(100000);
-  if (file_exists($full_path)) {
-    $stream = file_get_contents($full_path);
-    print $stream;
-    exit;
-  }
 }
