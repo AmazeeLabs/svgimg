@@ -240,7 +240,7 @@ function svgimg_get_imagickmagic_info($imagick_data) {
     }
   }
   else {
-    $out = exec(variable_get('svgimg_imagemagick_path') ." -version", $return);
+    $out = exec(variable_get('svgimg_imagemagick') ." -version", $return);
     $api = array();
     if (is_array($return)) {
       foreach ($return as $line) {
