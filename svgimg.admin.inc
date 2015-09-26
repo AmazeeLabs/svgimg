@@ -252,7 +252,6 @@ function svgimg_get_imagickmagic_info($imagick_data) {
           case 'version':
             $versionString = $string;
             break;
-            
         }
       }
     }
