@@ -117,6 +117,7 @@ function _svgimg_php_render($full_path = '', $svg = '', array $size = array()) {
   $im = new Imagick();
   try {
     $im->readImageBlob($svg);
+    $valid_svg = true;
   }
   catch (Exception $e) {
     watchdog("error", "SVG file could not be parsed for PNG conversion: " . $e->getMessage());
