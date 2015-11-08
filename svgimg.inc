@@ -134,7 +134,7 @@ function svgimg_fetch_style_size($style_name = NULL) {
 */
 function svgimg_image_is_svg(&$item) {
   $mime_key = 'jpg';
-  if (is_array($item) isset($item['filemime'])) {
+  if (is_array($item) && isset($item['filemime'])) {
     $mime_parts = explode('/',$item['filemime']);
     if ($mime_parts[0] == 'image') {
       $image_mime_parts = explode('+',$mime_parts[1]);
